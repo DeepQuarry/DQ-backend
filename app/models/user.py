@@ -1,11 +1,9 @@
 from typing import List
 
-from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base
-from app.models.image import Image
-from app.models.tag import Tag
+
 
 class User(Base):
     __tablename__ = "user"
@@ -15,5 +13,6 @@ class User(Base):
     username: Mapped[str]
     hashed_password: Mapped[str]
     is_admin: Mapped[bool] = mapped_column(default=False)
-    liked_datasets: Mapped[List["Dataset"]] = relationship(secondary="liked_dataset") # type: ignore
-    created_datasets: Mapped[List["Dataset"]] = relationship(secondary="created_dataset") # type: ignore
+    is_active: Mapped[bool] = mapped_column(default=True)
+    liked_datasets: Mapped[List["Dataset"]] = relationship(secondary="liked_dataset")  # type: ignore
+    created_datasets: Mapped[List["Dataset"]] = relationship(secondary="created_dataset")  # type: ignore

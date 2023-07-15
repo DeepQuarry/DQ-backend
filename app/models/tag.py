@@ -10,6 +10,6 @@ class Tag(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     title: Mapped[str]
-    datasets: Mapped[List["Dataset"]] = relationship( # type: ignore
+    datasets: Mapped[List["Dataset"]] = relationship(  # type: ignore
         secondary="dataset_tag", back_populates="tags"
     )

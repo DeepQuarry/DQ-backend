@@ -6,11 +6,9 @@ logger.info("Starting API")
 
 app = FastAPI()
 
-origins = ["*"]
-
-# add routers and middleware here
+# add middleware, origins here
 
 
 @app.get("/")
-async def root():
-    return {"message": "wsg"}
+async def main():
+    return {"message": "DeepQuarry API v1.0"}
