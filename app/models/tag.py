@@ -6,8 +6,6 @@ from app.db.base_class import Base
 
 
 class Tag(Base):
-    __tablename__ = "tag"
-
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     title: Mapped[str]
     datasets: Mapped[List["Dataset"]] = relationship(  # type: ignore

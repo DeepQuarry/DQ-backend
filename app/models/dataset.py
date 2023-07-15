@@ -8,37 +8,27 @@ from app.models.image import Image
 from app.models.tag import Tag
 
 
-class DatasetTag(Base):
-    __tablename__ = "dataset_tag"
-
+class Dataset_Tag(Base):
     dataset_id: Mapped[int] = mapped_column(ForeignKey("dataset.id"), primary_key=True)
     tag_id: Mapped[int] = mapped_column(ForeignKey("tag.id"), primary_key=True)
 
 
-class DatasetImage(Base):
-    __tablename__ = "dataset_image"
-
+class Dataset_Image(Base):
     dataset_id: Mapped[int] = mapped_column(ForeignKey("dataset.id"), primary_key=True)
     image_id: Mapped[int] = mapped_column(ForeignKey("image.id"), primary_key=True)
 
 
-class LikedDataset(Base):
-    __tablename__ = "liked_dataset"
-
+class Liked_Dataset(Base):
     dataset_id: Mapped[int] = mapped_column(ForeignKey("dataset.id"), primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), primary_key=True)
 
 
-class CreatedDataset(Base):
-    __tablename__ = "created_dataset"
-
+class Created_Dataset(Base):
     dataset_id: Mapped[int] = mapped_column(ForeignKey("dataset.id"), primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), primary_key=True)
 
 
 class Dataset(Base):
-    __tablename__ = "dataset"
-
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     title: Mapped[str]
     likes: Mapped[int]

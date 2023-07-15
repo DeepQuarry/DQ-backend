@@ -6,8 +6,6 @@ from app.db.base_class import Base
 
 
 class User(Base):
-    __tablename__ = "user"
-
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     email: Mapped[str]
     username: Mapped[str]
