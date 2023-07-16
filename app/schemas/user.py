@@ -5,7 +5,7 @@ from pydantic import BaseModel, EmailStr
 
 class UserBase(BaseModel):
     email: Optional[EmailStr]
-    is_active: Optional[bool] = None
+    min_last_active: Optional[int] = 0
     # this way we will always know if a User is a superuser or not
     is_superuser: bool = False
     username: Optional[str] = None

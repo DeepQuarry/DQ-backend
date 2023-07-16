@@ -5,12 +5,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base
 from app.models.image import Image
-from app.models.tag import Tag
-
-
-class Dataset_Tag(Base):
-    dataset_id: Mapped[int] = mapped_column(ForeignKey("dataset.id"), primary_key=True)
-    tag_id: Mapped[int] = mapped_column(ForeignKey("tag.id"), primary_key=True)
+from app.models.query import Query
 
 
 class Dataset_Image(Base):
@@ -33,9 +28,8 @@ class Dataset(Base):
     title: Mapped[str]
     likes: Mapped[int]
     dislikes: Mapped[int]
+
+    query: Mapped["Query"] = relationship(back_populates="dataset")
     images: Mapped[List["Image"]] = relationship(
         secondary="dataset_image", back_populates="datasets"
-    )
-    tags: Mapped[List["Tag"]] = relationship(
-        secondary="dataset_tag", back_populates="datasets"
     )

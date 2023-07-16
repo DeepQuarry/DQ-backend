@@ -4,21 +4,16 @@ from pydantic import BaseModel
 
 from app.schemas.image import Image
 
-if TYPE_CHECKING:
-    from app.schemas.tag import TagBase
-
-
 class DatasetBase(BaseModel):
     title: Optional[str] = None
+    query_id: Optional[int] = None
     likes: Optional[int] = None
     dislikes: Optional[int] = None
     images: Optional[List[Image]] = None
-    tags: Optional[List["TagBase"]] = None
 
 
 class DatasetCreate(DatasetBase):
     title: str
-    tags: List["TagBase"]
 
 
 class DatasetUpdate(DatasetBase):
