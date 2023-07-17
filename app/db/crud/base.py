@@ -1,11 +1,10 @@
-from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
+from typing import Any, Dict, Generic, List, Optional, Type, TypeVar
 
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.db.base_class import Base
-
 
 ModelType = TypeVar("ModelType", bound=Base)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
@@ -29,8 +28,10 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db.commit()
         db.refresh()
         return db_obj
-    
-    def update(self, db: Session, db_obj: ModelType, obj_in: UpdateSchemaType | Dict[str, Any]):
+
+    def update(
+        self, db: Session, db_obj: ModelType, obj_in: UpdateSchemaType | Dict[str, Any]
+    ):
         obj_data = jsonable_encoder(db_obj)
 
         if isinstance(obj_in, dict):
@@ -52,5 +53,3 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db.delete(obj)
         db.commit()
         return obj
-
-

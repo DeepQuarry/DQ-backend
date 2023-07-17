@@ -26,8 +26,8 @@ class Created_Dataset(Base):
 class Dataset(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     title: Mapped[str]
-    likes: Mapped[int]
-    dislikes: Mapped[int]
+    likes: Mapped[int] = mapped_column(default=0)
+    dislikes: Mapped[int] = mapped_column(default=0)
 
     query: Mapped["Query"] = relationship(back_populates="dataset")
     images: Mapped[List["Image"]] = relationship(

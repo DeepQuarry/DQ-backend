@@ -1,8 +1,9 @@
-from typing import TYPE_CHECKING, List, Optional
+from typing import List, Optional
 
 from pydantic import BaseModel
 
 from app.schemas.image import Image
+
 
 class DatasetBase(BaseModel):
     title: Optional[str] = None
