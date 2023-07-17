@@ -1,22 +1,24 @@
-from io import BytesIO
+import hashlib
+import imghdr
 import os
+import posixpath
 import random
+import re
+import shutil
+import socket
 import time
-from typing import Dict, List
 import urllib.parse
+from io import BytesIO
+from threading import BoundedSemaphore, Lock, Thread
+from typing import Dict, List
+
 import requests
 from requests_ip_rotator import ApiGateway
-import socket
-from threading import Thread, BoundedSemaphore, Lock
-import re
-import imghdr
-import hashlib
-import posixpath
-import shutil
 
 from app.core.log import generate_logger
 
 logger = generate_logger("Scraper")
+
 
 class Scraper:
     DOMAIN = "https://www.bing.com"
@@ -80,7 +82,6 @@ class Scraper:
 
         return encoded_url
 
-
     def get_upload_dir(self, query_id: int) -> str:
         if self.is_testing:
             return os.path.join("app", ".cache", "datasets", str(query_id))
@@ -91,14 +92,14 @@ class Scraper:
         if url in self.downloaded_urls:
             logger.warning(f"SKIP: Already downloaded url: {url}")
             return
-        
+
         self.download_semaphore.acquire()
 
         path = urllib.parse.urlsplit(url).path
         name, _ = os.path.splitext(posixpath.basename(path))
         if not name:
             # if path and name are empty (e.g. https://sample.domain/abcd/?query)
-            name = hashlib.md5(url.encode('utf-8')).hexdigest()
+            name = hashlib.md5(url.encode("utf-8")).hexdigest()
         name = name.strip()[:36].strip()
 
         try:
@@ -125,7 +126,7 @@ class Scraper:
             counter = 0
             target_filepath = os.path.join(upload_dir, filename)
             while os.path.exists(target_filepath):
-                if hashlib.md5(open(target_filepath, 'rb').read()).hexdigest() == hash:
+                if hashlib.md5(open(target_filepath, "rb").read()).hexdigest() == hash:
                     logger.warning(f"SKIP: Already downloaded {filename}, not saving")
                     return
 
@@ -154,8 +155,6 @@ class Scraper:
             if self.file_lock.locked():
                 self.file_lock.release()
 
-
-
     def scrape_images(self, query: str, query_id: int):
         upload_dir = self.get_upload_dir(query_id)
         if self.is_testing:
@@ -171,18 +170,23 @@ class Scraper:
             self.DOMAIN,
             regions=self.regions,
             access_key_id=self.aws_key,
-            access_key_secret=self.aws_secret
+            access_key_secret=self.aws_secret,
         ) as g:
-
             self.session = requests.Session()
             self.session.mount(self.DOMAIN, g)
 
             while True:
                 time.sleep(0.1)
 
-                url = "https://www.bing.com/images/async?q=" + cleaned_query + "&first=" + str(images_downloaded) + "&count=35&qft="
+                url = (
+                    "https://www.bing.com/images/async?q="
+                    + cleaned_query
+                    + "&first="
+                    + str(images_downloaded)
+                    + "&count=35&qft="
+                )
                 response = self.session.get(url, headers=self.headers)
-                links = re.findall('murl&quot;:&quot;(.*?)&quot;', response.text)
+                links = re.findall("murl&quot;:&quot;(.*?)&quot;", response.text)
 
                 try:
                     if links[-1] == last:
@@ -192,7 +196,9 @@ class Scraper:
                         if len(self.downloaded_urls) > self.image_limit:
                             return
 
-                        thread = Thread(target=self.download_image, args=(link, upload_dir))
+                        thread = Thread(
+                            target=self.download_image, args=(link, upload_dir)
+                        )
                         thread.start()
 
                     last = links[-1]
@@ -202,10 +208,10 @@ class Scraper:
                     logger.error(f"FAIL: Failed to download '{query}': {str(e)}")
 
 
-
 def test_scraper():
     scraper = Scraper(image_limit=10)
     scraper.scrape_images("munchkin", 1)
+
 
 if __name__ == "__main__":
     test_scraper()
