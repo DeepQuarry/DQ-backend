@@ -3,8 +3,8 @@ from typing import Any, Dict, Generic, List, Optional, Type, TypeVar
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from app.core.log import generate_logger
 
+from app.core.log import generate_logger
 from app.db.base_class import Base
 
 logger = generate_logger()

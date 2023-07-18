@@ -12,6 +12,7 @@ class QueryCreate(QueryBase):
     query: str
     subtask_completed: bool = False
 
+
 class QueryUpdate(QueryBase):
     subtask_completed: bool = False
 

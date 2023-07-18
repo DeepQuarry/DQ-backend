@@ -1,6 +1,5 @@
 from typing import Generator
 
-from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from app.db.session import SessionLocal

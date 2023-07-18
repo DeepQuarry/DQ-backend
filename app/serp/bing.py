@@ -107,6 +107,9 @@ class Scraper:
             raise NotImplementedError("Server side upload not implemented yet")
 
     def download_image(self, url: str, upload_dir: str):
+        if len(self.downloaded_urls) >= self.image_limit:
+            return
+
         if url in self.downloaded_urls:
             logger.warning(f"SKIP: Already downloaded url: {url}")
             return
@@ -144,7 +147,7 @@ class Scraper:
             counter = 0
             image_path = os.path.join(upload_dir, filename)
             while os.path.exists(image_path):
-                if (hashlib.md5(open(image_path, "rb").read()).hexdigest() == hash):
+                if hashlib.md5(open(image_path, "rb").read()).hexdigest() == hash:
                     logger.warning(f"SKIP: Already downloaded {filename}, not saving")
                     return
 
@@ -155,8 +158,6 @@ class Scraper:
             self.image_hashes[hash] = filename
 
             self.file_lock.acquire()
-            if len(self.downloaded_urls) >= self.image_limit:
-                return
 
             if self.is_writing_db:
                 self.image_models.append(Image(hash=hash, path=image_path))
@@ -176,7 +177,9 @@ class Scraper:
             if self.file_lock.locked():
                 self.file_lock.release()
 
-    def scrape_images(self, query_model: Query, db: Optional[Session] = None): # Session is not to be confused with requests.Session
+    def scrape_images(
+        self, query_model: Query, db: Optional[Session] = None
+    ):  # Session is not to be confused with requests.Session
         if self.is_scraping:
             logger.error("Cannot scrape - already in progress")
             return
@@ -225,7 +228,9 @@ class Scraper:
                             self.is_scraping = False
 
                             if self.is_writing_db:
-                                dataset = Dataset(query_id=query_model.id, title=query_model.query)
+                                dataset = Dataset(
+                                    query_id=query_model.id, title=query_model.query
+                                )
                                 dataset.images = self.image_models
                                 db.add_all([dataset, *self.image_models])
 

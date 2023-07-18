@@ -1,7 +1,8 @@
+from fastapi import FastAPI
+
+from app.api.v1.api import main_router
 from app.core.config import settings
 from app.core.log import generate_logger
-from fastapi import FastAPI
-from app.api.v1.api import main_router
 
 logger = generate_logger()
 logger.info("Starting API")
@@ -14,6 +15,7 @@ app = FastAPI(
 
 
 app.include_router(main_router, prefix=settings.API_V1_STR)
+
 
 @app.get("/")
 async def main():

@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     APP_IP: str
     APP_DB: str
 
-    PROJECT_NAME = "DeepQuarry API v1" 
+    PROJECT_NAME = "DeepQuarry API v1"
     TESTING: bool = True
 
 
