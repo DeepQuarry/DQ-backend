@@ -3,8 +3,11 @@ from typing import Any, Dict, Generic, List, Optional, Type, TypeVar
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from app.core.log import generate_logger
 
 from app.db.base_class import Base
+
+logger = generate_logger()
 
 ModelType = TypeVar("ModelType", bound=Base)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
@@ -26,12 +29,12 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db_obj = self.model(**obj_in_data)
         db.add(db_obj)
         db.commit()
-        db.refresh()
+        db.refresh(db_obj)
         return db_obj
 
     def update(
         self, db: Session, db_obj: ModelType, obj_in: UpdateSchemaType | Dict[str, Any]
-    ):
+    ) -> ModelType:
         obj_data = jsonable_encoder(db_obj)
 
         if isinstance(obj_in, dict):
@@ -39,13 +42,16 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         else:
             update_data = obj_in.dict(exclude_unset=True)
 
+        print(obj_data)
+        print(update_data)
+
         for field in obj_data:
             if field in update_data:
                 setattr(db_obj, field, update_data[field])
 
         db.add(db_obj)
         db.commit()
-        db.refresh()
+        db.refresh(db_obj)
         return db_obj
 
     def remove(self, db: Session, id: int) -> ModelType:

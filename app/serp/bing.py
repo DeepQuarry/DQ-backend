@@ -17,10 +17,9 @@ from requests_ip_rotator import ApiGateway
 from sqlalchemy.orm import Session
 
 from app.core.log import generate_logger
-from app.db import crud
+from app.models.dataset import Dataset
+from app.models.image import Image
 from app.models.query import Query
-from app.schemas.dataset import DatasetCreate
-from app.schemas.image import ImageCreate
 
 logger = generate_logger("Scraper")
 
@@ -68,9 +67,10 @@ class Scraper:
         self.download_semaphore = BoundedSemaphore(threads)
         self.file_lock = Lock()
         self.session = None
-        self.image_schemas = []
+        self.image_models = []
         self.is_scraping = False
         self.dataset_model = None
+        self.is_writing_db = False
 
         user_agent = random.choice(USER_AGENTS)
         self.headers["User-Agent"] = user_agent
@@ -97,7 +97,8 @@ class Scraper:
         self.download_semaphore = BoundedSemaphore(self.threads)
         self.file_lock = Lock()
         self.session = None
-        self.image_schemas = []
+        self.image_models = []
+        self.dataset_model = None
 
     def get_upload_dir(self, query_id: int) -> str:
         if self.is_testing:
@@ -143,7 +144,7 @@ class Scraper:
             counter = 0
             image_path = os.path.join(upload_dir, filename)
             while os.path.exists(image_path):
-                if (hashlib.md5(open(image_path), "rb").read()).hexdigest() == hash:
+                if (hashlib.md5(open(image_path, "rb").read()).hexdigest() == hash):
                     logger.warning(f"SKIP: Already downloaded {filename}, not saving")
                     return
 
@@ -154,11 +155,11 @@ class Scraper:
             self.image_hashes[hash] = filename
 
             self.file_lock.acquire()
-            if len(self.downloaded_urls) > self.image_limit:
+            if len(self.downloaded_urls) >= self.image_limit:
                 return
 
-            image_schema = ImageCreate(hash=hash, path=image_path, dataset_id=self.dataset_model.id)
-            self.image_schemas.append(image_schema)
+            if self.is_writing_db:
+                self.image_models.append(Image(hash=hash, path=image_path))
 
             with open(image_path, "wb") as f:
                 f.write(image)
@@ -181,14 +182,10 @@ class Scraper:
             return
 
         self.reset_scraper()
-        is_writing_db = db != None
-
-        if is_writing_db:
-            dataset_schema = DatasetCreate(query_id=query_model.id, title=query_model.query)
-            self.dataset_model = crud.dataset.create(db, dataset_schema)
+        self.is_writing_db = db != None
 
         upload_dir = self.get_upload_dir(query_model.id)
-        if self.is_testing:
+        if self.is_testing and os.path.exists(upload_dir):
             shutil.rmtree(upload_dir)
 
         os.mkdir(upload_dir)
@@ -224,13 +221,18 @@ class Scraper:
                         return
 
                     for link in links:
-                        if len(self.downloaded_urls) > self.image_limit:
+                        if len(self.downloaded_urls) >= self.image_limit:
                             self.is_scraping = False
-                            if is_writing_db:
-                                # TODO
-                                pass
-                                
 
+                            if self.is_writing_db:
+                                dataset = Dataset(query_id=query_model.id, title=query_model.query)
+                                dataset.images = self.image_models
+                                db.add_all([dataset, *self.image_models])
+
+                                setattr(query_model, "subtask_completed", True)
+                                db.commit()
+
+                            logger.info("Finished scraping")
                             return
 
                         thread = Thread(
@@ -241,7 +243,7 @@ class Scraper:
 
                     last = links[-1]
 
-                except:
+                except Exception:
                     logger.error(f"FAIL: Failed to download '{query_model.query}'")
 
 
