@@ -7,7 +7,7 @@ class ImageBase(BaseModel):
     hash: Optional[str] = None
     path: Optional[str] = None
     dataset_id: Optional[int] = None
-    
+
 
 class ImageCreate(ImageBase):
     hash: str

@@ -7,7 +7,7 @@ from app.db.session import SessionLocal
 
 # tokenUrl is a relative url, so the if the API was @ https://example.com/
 # then the token URL would be @ https://example.com/token
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login/acess-token")
+# oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login/acess-token")
 
 
 def get_db() -> Generator:

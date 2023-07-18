@@ -12,5 +12,5 @@ class User(Base):
     hashed_password: Mapped[str]
     is_admin: Mapped[bool] = mapped_column(default=False)
     min_last_active: Mapped[int] = mapped_column(default=0)
-    liked_datasets: Mapped[List["Dataset"]] = relationship(secondary="liked_dataset")  # type: ignore
-    created_datasets: Mapped[List["Dataset"]] = relationship(secondary="created_dataset")  # type: ignore
+    # liked_datasets: Mapped[List["Dataset"]] = relationship(secondary="liked_dataset")  # type: ignore
+    # created_datasets: Mapped[List["Dataset"]] = relationship(secondary="created_dataset")  # type: ignore

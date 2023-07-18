@@ -10,13 +10,17 @@ import time
 import urllib.parse
 from io import BytesIO
 from threading import BoundedSemaphore, Lock, Thread
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import requests
 from requests_ip_rotator import ApiGateway
+from sqlalchemy.orm import Session
 
 from app.core.log import generate_logger
-
+from app.db import crud
+from app.models.query import Query
+from app.schemas.dataset import DatasetCreate
+from app.schemas.image import ImageCreate
 
 logger = generate_logger("Scraper")
 
@@ -53,6 +57,7 @@ class Scraper:
         AWS_ACCESS_KEY_SECRET: str | None = None,
     ):
         self.is_testing = is_testing
+        self.threads = threads
         self.headers = HEADERS
         self.regions = REGIONS
         self.aws_key = AWS_ACCESS_KEY_ID
@@ -63,6 +68,9 @@ class Scraper:
         self.download_semaphore = BoundedSemaphore(threads)
         self.file_lock = Lock()
         self.session = None
+        self.image_schemas = []
+        self.is_scraping = False
+        self.dataset_model = None
 
         user_agent = random.choice(USER_AGENTS)
         self.headers["User-Agent"] = user_agent
@@ -82,6 +90,14 @@ class Scraper:
         encoded_url = urllib.parse.urlunsplit((scheme, netloc, path, query, fragment))
 
         return encoded_url
+
+    def reset_scraper(self):
+        self.image_hashes = {}
+        self.downloaded_urls = set()
+        self.download_semaphore = BoundedSemaphore(self.threads)
+        self.file_lock = Lock()
+        self.session = None
+        self.image_schemas = []
 
     def get_upload_dir(self, query_id: int) -> str:
         if self.is_testing:
@@ -124,14 +140,16 @@ class Scraper:
                 logger.warning(f"SKIP: Already downloaded {filename}, not saving")
                 return
 
-
             counter = 0
-            while os.path.exists(os.path.join(upload_dir, filename)):
-                if hashlib.md5(open(os.path.join(upload_dir, filename), 'rb').read()).hexdigest() == hash:
+            image_path = os.path.join(upload_dir, filename)
+            while os.path.exists(image_path):
+                if (hashlib.md5(open(image_path), "rb").read()).hexdigest() == hash:
                     logger.warning(f"SKIP: Already downloaded {filename}, not saving")
                     return
+
                 counter += 1
                 filename = "%s-%d.%s" % (name, counter, ext)
+                image_path = os.path.join(upload_dir, filename)
 
             self.image_hashes[hash] = filename
 
@@ -139,7 +157,10 @@ class Scraper:
             if len(self.downloaded_urls) > self.image_limit:
                 return
 
-            with open(os.path.join(upload_dir, filename), "wb") as f:
+            image_schema = ImageCreate(hash=hash, path=image_path, dataset_id=self.dataset_model.id)
+            self.image_schemas.append(image_schema)
+
+            with open(image_path, "wb") as f:
                 f.write(image)
 
             logger.info(f"DOWNLOADED: {filename}")
@@ -154,15 +175,26 @@ class Scraper:
             if self.file_lock.locked():
                 self.file_lock.release()
 
-    def scrape_images(self, query: str, query_id: int):
-        upload_dir = self.get_upload_dir(query_id)
+    def scrape_images(self, query_model: Query, db: Optional[Session] = None): # Session is not to be confused with requests.Session
+        if self.is_scraping:
+            logger.error("Cannot scrape - already in progress")
+            return
+
+        self.reset_scraper()
+        is_writing_db = db != None
+
+        if is_writing_db:
+            dataset_schema = DatasetCreate(query_id=query_model.id, title=query_model.query)
+            self.dataset_model = crud.dataset.create(db, dataset_schema)
+
+        upload_dir = self.get_upload_dir(query_model.id)
         if self.is_testing:
             shutil.rmtree(upload_dir)
 
         os.mkdir(upload_dir)
 
         images_downloaded = 1
-        cleaned_query = urllib.parse.quote_plus(query)
+        cleaned_query = urllib.parse.quote_plus(query_model.query)
         last = ""
 
         with ApiGateway(
@@ -193,6 +225,12 @@ class Scraper:
 
                     for link in links:
                         if len(self.downloaded_urls) > self.image_limit:
+                            self.is_scraping = False
+                            if is_writing_db:
+                                # TODO
+                                pass
+                                
+
                             return
 
                         thread = Thread(
@@ -204,7 +242,7 @@ class Scraper:
                     last = links[-1]
 
                 except:
-                    logger.error(f"FAIL: Failed to download '{query}'")
+                    logger.error(f"FAIL: Failed to download '{query_model.query}'")
 
 
 def test_scraper():

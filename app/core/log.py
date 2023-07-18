@@ -34,7 +34,7 @@ class _CustomFormatter(logging.Formatter):
         return formatter.format(record)
 
 
-def generate_logger(name: Optional[str] = None):
+def generate_logger(name: Optional[str] = None, level: int = logging.DEBUG):
     if not name:
         caller_frame = inspect.stack()[1]
         caller_filename_full = caller_frame.filename.split("/")
@@ -45,11 +45,11 @@ def generate_logger(name: Optional[str] = None):
         name = module + name
 
     logger = logging.getLogger(name)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(level)
 
     # create console handler with a higher log level
     ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
+    ch.setLevel(level)
 
     ch.setFormatter(_CustomFormatter())
 
