@@ -17,6 +17,7 @@ from requests_ip_rotator import ApiGateway
 
 from app.core.log import generate_logger
 
+
 logger = generate_logger("Scraper")
 
 
@@ -123,16 +124,14 @@ class Scraper:
                 logger.warning(f"SKIP: Already downloaded {filename}, not saving")
                 return
 
+
             counter = 0
-            target_filepath = os.path.join(upload_dir, filename)
-            while os.path.exists(target_filepath):
-                if hashlib.md5(open(target_filepath, "rb").read()).hexdigest() == hash:
+            while os.path.exists(os.path.join(upload_dir, filename)):
+                if hashlib.md5(open(os.path.join(upload_dir, filename), 'rb').read()).hexdigest() == hash:
                     logger.warning(f"SKIP: Already downloaded {filename}, not saving")
                     return
-
                 counter += 1
                 filename = "%s-%d.%s" % (name, counter, ext)
-                target_filepath = os.path.join(upload_dir, filename)
 
             self.image_hashes[hash] = filename
 
@@ -140,14 +139,14 @@ class Scraper:
             if len(self.downloaded_urls) > self.image_limit:
                 return
 
-            with open(target_filepath, "wb") as f:
+            with open(os.path.join(upload_dir, filename), "wb") as f:
                 f.write(image)
 
             logger.info(f"DOWNLOADED: {filename}")
             self.downloaded_urls.add(url)
 
-        except Exception as e:
-            logger.error("FAIL: " + name, str(e))
+        except Exception:
+            logger.error("FAIL: " + name)
 
         finally:
             self.download_semaphore.release()
@@ -200,17 +199,17 @@ class Scraper:
                             target=self.download_image, args=(link, upload_dir)
                         )
                         thread.start()
+                        images_downloaded += 1
 
                     last = links[-1]
-                    images_downloaded += 1
 
-                except Exception as e:
-                    logger.error(f"FAIL: Failed to download '{query}': {str(e)}")
+                except:
+                    logger.error(f"FAIL: Failed to download '{query}'")
 
 
 def test_scraper():
-    scraper = Scraper(image_limit=10)
-    scraper.scrape_images("munchkin", 1)
+    scraper = Scraper(image_limit=50, threads=20)
+    scraper.scrape_images("bae suzy", 1)
 
 
 if __name__ == "__main__":

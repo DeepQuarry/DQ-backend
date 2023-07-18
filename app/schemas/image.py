@@ -4,19 +4,19 @@ from pydantic import BaseModel
 
 
 class ImageBase(BaseModel):
-    image_hash: Optional[int] = None
-    width: Optional[int] = None
-    height: Optional[int] = None
-    alt: Optional[str] = None
-
+    hash: Optional[str] = None
+    path: Optional[str] = None
+    dataset_id: Optional[int] = None
+    
 
 class ImageCreate(ImageBase):
-    width: int
-    height: int
+    hash: str
+    path: str
+    dataset_id: int
 
 
 class ImageUpdate(ImageBase):
-    alt: str
+    pass
 
 
 class Image(ImageBase):
