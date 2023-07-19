@@ -12,6 +12,7 @@ def create_postgres_url():
 
 
 SQLALCHEMY_DATABASE_URL = create_postgres_url()
+print(SQLALCHEMY_DATABASE_URL)
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
