@@ -17,8 +17,8 @@ import requests
 from requests_ip_rotator import ApiGateway
 from sqlalchemy.orm import Session
 
-from app.core.log import generate_logger
 from app.core.config import settings
+from app.core.log import generate_logger
 from app.models.dataset import Dataset
 from app.models.image import Image
 from app.models.query import Query
@@ -177,7 +177,6 @@ class Scraper:
             if self.is_writing_db:
                 self.image_models.append(Image(hash=hash, path=image_path))
 
-
             self.write_image(image_path, image)
 
             logger.debug(f"DOWNLOADED: {filename}")
@@ -238,10 +237,12 @@ class Scraper:
 
                 try:
                     for link in links:
-                        if len(self.downloaded_urls) >= self.image_limit or links[-1] == last:
+                        if (
+                            len(self.downloaded_urls) >= self.image_limit
+                            or links[-1] == last
+                        ):
                             if links[-1] == last:
                                 logger.info("REACHED END OF BING IMAGES")
-
 
                             if self.is_writing_db:
                                 dataset = Dataset(

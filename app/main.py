@@ -14,21 +14,18 @@ app = FastAPI(
 
 
 origins = [
-    "https://deepquarry-pi.vercel.app",
-    "https://deepquarry.vercel.app"
-    "http://localhost",
-    "http://localhost:8080",
+    "*" # just for now
+    # "https://deepquarry-pi.vercel.app",
+    # "https://deepquarry.vercel.app" "http://localhost",
+    # "http://localhost:8080",
 ]
 
-regex_origin = [
-    "https?//.*\.deepquarry.*vercel.app",
-    "https?//.*\.localhost:?\d*"
-]
+regex_origin = ["https?//.*\.deepquarry.*vercel.app", "https?//.*\.localhost:?\d*"]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_origin_regex=regex_origin,
+    allow_origins=["*"],
+    # allow_origin_regex=regex_origin,
     allow_credentials=True,
     allow_methods=["GET", "POST"],
     allow_headers=["*"],

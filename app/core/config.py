@@ -1,4 +1,5 @@
 from typing import Optional
+
 from pydantic import BaseSettings
 
 
@@ -17,7 +18,7 @@ class Settings(BaseSettings):
     POSTGRES_DB: str
 
     # Heroku designates the primary DB with this config var
-    DATABASE_URL: Optional[str] = None 
+    DATABASE_URL: Optional[str] = None
 
     PROJECT_NAME = "DeepQuarry API v1"
     TESTING: bool = True

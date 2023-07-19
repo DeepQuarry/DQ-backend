@@ -1,9 +1,11 @@
 from typing import Generator
+
 from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
+
 from app.core import config
 from app.db.session import SessionLocal
-from fastapi.security import OAuth2PasswordBearer
 
 # tokenUrl is a relative url, so the if the API was @ https://example.com/
 # then the token URL would be @ https://example.com/token
@@ -11,6 +13,7 @@ from fastapi.security import OAuth2PasswordBearer
 
 valid_api_key = config.settings.API_KEY
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")  # use token authentication
+
 
 def api_key_auth(api_key: str = Depends(oauth2_scheme)):
     if api_key not in valid_api_key:
