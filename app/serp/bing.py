@@ -1,5 +1,6 @@
 import hashlib
 import imghdr
+import logging
 import os
 import posixpath
 import random
@@ -17,11 +18,12 @@ from requests_ip_rotator import ApiGateway
 from sqlalchemy.orm import Session
 
 from app.core.log import generate_logger
+from app.core.config import settings
 from app.models.dataset import Dataset
 from app.models.image import Image
 from app.models.query import Query
 
-logger = generate_logger("Scraper")
+logger = generate_logger("Scraper", level=logging.INFO)
 
 
 class Scraper:
@@ -52,15 +54,14 @@ class Scraper:
         REGIONS: List[str] = DEFAULT_REGIONS,
         USER_AGENTS: List[str] = DEFAULT_USER_AGENTS,
         HEADERS: Dict[str, str] = DEFAULT_HEADERS,
-        AWS_ACCESS_KEY_ID: str | None = None,
-        AWS_ACCESS_KEY_SECRET: str | None = None,
     ):
         self.is_testing = is_testing
         self.threads = threads
         self.headers = HEADERS
         self.regions = REGIONS
-        self.aws_key = AWS_ACCESS_KEY_ID
-        self.aws_secret = AWS_ACCESS_KEY_SECRET
+        self.user_agents = USER_AGENTS
+        self.aws_key = settings.AWS_ACCESS_KEY_ID
+        self.aws_secret = settings.AWS_ACCESS_KEY_SECRET
         self.image_limit = image_limit
         self.image_hashes = {}
         self.downloaded_urls = set()
@@ -100,14 +101,25 @@ class Scraper:
         self.image_models = []
         self.dataset_model = None
 
+        user_agent = random.choice(self.user_agents)
+        self.headers["User-Agent"] = user_agent
+
     def get_upload_dir(self, query_id: int) -> str:
         if self.is_testing:
             return os.path.join("app", ".cache", "datasets", str(query_id))
         else:
             raise NotImplementedError("Server side upload not implemented yet")
 
+    def write_image(self, image_path: str, image: bytes):
+        if self.is_testing:
+            with open(image_path, "wb") as f:
+                f.write(image)
+        else:
+            raise NotImplementedError("Server side upload not implemented yet")
+
     def download_image(self, url: str, upload_dir: str):
-        if len(self.downloaded_urls) >= self.image_limit:
+        if len(self.downloaded_urls) >= self.image_limit or not self.is_scraping:
+            logger.warning(f"Killing thread for {url}")
             return
 
         if url in self.downloaded_urls:
@@ -155,6 +167,9 @@ class Scraper:
                 filename = "%s-%d.%s" % (name, counter, ext)
                 image_path = os.path.join(upload_dir, filename)
 
+            if len(self.downloaded_urls) >= self.image_limit:
+                return
+
             self.image_hashes[hash] = filename
 
             self.file_lock.acquire()
@@ -162,10 +177,10 @@ class Scraper:
             if self.is_writing_db:
                 self.image_models.append(Image(hash=hash, path=image_path))
 
-            with open(image_path, "wb") as f:
-                f.write(image)
 
-            logger.info(f"DOWNLOADED: {filename}")
+            self.write_image(image_path, image)
+
+            logger.debug(f"DOWNLOADED: {filename}")
             self.downloaded_urls.add(url)
 
         except Exception:
@@ -186,6 +201,7 @@ class Scraper:
 
         self.reset_scraper()
         self.is_writing_db = db != None
+        self.is_scraping = True
 
         upload_dir = self.get_upload_dir(query_model.id)
         if self.is_testing and os.path.exists(upload_dir):
@@ -216,16 +232,16 @@ class Scraper:
                     + str(images_downloaded)
                     + "&count=35&qft="
                 )
+                logger.debug(f"SCRAPING {url}")
                 response = self.session.get(url, headers=self.headers)
                 links = re.findall("murl&quot;:&quot;(.*?)&quot;", response.text)
 
                 try:
-                    if links[-1] == last:
-                        return
-
                     for link in links:
-                        if len(self.downloaded_urls) >= self.image_limit:
-                            self.is_scraping = False
+                        if len(self.downloaded_urls) >= self.image_limit or links[-1] == last:
+                            if links[-1] == last:
+                                logger.info("REACHED END OF BING IMAGES")
+
 
                             if self.is_writing_db:
                                 dataset = Dataset(
@@ -237,9 +253,11 @@ class Scraper:
                                 setattr(query_model, "subtask_completed", True)
                                 db.commit()
 
+                            self.is_scraping = False
                             logger.info("Finished scraping")
                             return
 
+                        logger.debug(f"STARTING THREAD ON {link}")
                         thread = Thread(
                             target=self.download_image, args=(link, upload_dir)
                         )

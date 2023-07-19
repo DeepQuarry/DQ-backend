@@ -12,14 +12,14 @@ from app.serp.bing import Scraper
 router = APIRouter()
 
 
-@router.get("", response_model=List[schemas.Query])
+@router.get("", response_model=List[schemas.Query], dependencies=[Depends(deps.api_key_auth)])
 async def get_queries(
     db: Session = Depends(deps.get_db), skip: int = 0, limit: int = 100
 ) -> List[Query]:
     return crud.query.get_multi(db=db, skip=skip, limit=limit)
 
 
-@router.get("/{id}", response_model=schemas.Query)
+@router.get("/{id}", response_model=schemas.Query, dependencies=[Depends(deps.api_key_auth)])
 async def get_query(*, db: Session = Depends(deps.get_db), id: int):
     query = crud.query.get(db=db, id=id)
     if not query:
@@ -28,11 +28,11 @@ async def get_query(*, db: Session = Depends(deps.get_db), id: int):
 
 
 def scrape_task(query: Query, db: Session):
-    bing_scraper = Scraper(image_limit=10, threads=5)
+    bing_scraper = Scraper(threads=query.threads, image_limit=query.image_limit, is_adult=query.is_adult)
     bing_scraper.scrape_images(query, db)
 
 
-@router.post("", response_model=schemas.Query)
+@router.post("", response_model=schemas.Query, dependencies=[Depends(deps.api_key_auth)])
 async def create_item(
     *,
     background_tasks: BackgroundTasks,
