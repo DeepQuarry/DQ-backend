@@ -11,11 +11,11 @@ class Settings(BaseSettings):
     AWS_ACCESS_KEY_ID: str
     AWS_SECRET_ACCESS_KEY: str
 
-    POSTGRES_USER: str
+    POSTGRES_USER: Optional[str]
     POSTGRES_PASSWORD: Optional[str] = None
-    POSTGRES_IP: str
+    POSTGRES_IP: Optional[str]
     POSTGRES_PORT: Optional[str] = None
-    POSTGRES_DB: str
+    POSTGRES_DB: Optional[str]
 
     # Heroku designates the primary DB with this config var
     DATABASE_URL: Optional[str] = None
