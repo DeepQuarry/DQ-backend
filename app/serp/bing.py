@@ -61,7 +61,7 @@ class Scraper:
         self.regions = REGIONS
         self.user_agents = USER_AGENTS
         self.aws_key = settings.AWS_ACCESS_KEY_ID
-        self.aws_secret = settings.AWS_ACCESS_KEY_SECRET
+        self.aws_secret = settings.AWS_SECRET_ACCESS_KEY
         self.image_limit = image_limit
         self.image_hashes = {}
         self.downloaded_urls = set()
