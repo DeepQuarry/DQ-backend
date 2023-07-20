@@ -27,7 +27,7 @@ If both are provided, `DATABASE_URL` will take priority.
 
 ### Setup dev
 
-```
+```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -40,3 +40,21 @@ Run the web server
 ```
 uvicorn app.main:app --reload --port 8000
 ```
+
+## Public API Usage
+The API is currently hosted at `https://deepquarry-28dd5496b5af.herokuapp.com/v1/api`.
+
+[Documentation](https://deepquarry-28dd5496b5af.herokuapp.com/docs)
+
+**When sending a request, supply the API Key in the form of Bearer Token authentication.
+
+### Example
+```python
+import requests
+endpoint = "https://deepquarry-28dd5496b5af.herokuapp.com/v1/api/query"
+query = {"query": "munchkin cat", "threads": 5, "image_limit": 100}
+API_KEY = os.getenv("API_KEY")
+headers = {"Authorization": f"Bearer {API_KEY}"}
+response = requests.post(endpoint, data=query, headers=headers).json()
+```
+
