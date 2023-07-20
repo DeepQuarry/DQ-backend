@@ -41,7 +41,7 @@ def scrape_task(query: Query, db: Session):
 @router.post(
     "", response_model=schemas.Query, dependencies=[Depends(deps.api_key_auth)]
 )
-async def create_item(
+async def create_query(
     *,
     background_tasks: BackgroundTasks,
     db: Session = Depends(deps.get_db),
