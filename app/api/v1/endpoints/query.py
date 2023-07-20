@@ -2,8 +2,8 @@ from typing import List
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app import schemas
 
+from app import schemas
 from app.api import deps
 from app.data.serp.bing import Scraper
 from app.db import crud

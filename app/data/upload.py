@@ -1,11 +1,13 @@
 import os
 import shutil
-import boto3
-from app.core.log import generate_logger
-from app.core.config import settings
 
+import boto3
+
+from app.core.config import settings
+from app.core.log import generate_logger
 
 logger = generate_logger()
+
 
 class Uploader:
     def __init__(self) -> None:
@@ -35,10 +37,8 @@ class Uploader:
                 shutil.rmtree(upload_dir)
             os.mkdir(upload_dir)
         else:
-            self.s3.Bucket(self.bucket_name).put_object(Key=upload_dir+"/")
-
+            self.s3.Bucket(self.bucket_name).put_object(Key=upload_dir + "/")
 
     def upload(self, fname: str, image: bytes):
         path = self.__get_fpath(fname)
         self.s3.Bucket(self.bucket_name).put_object(Key=path, Body=image)
-

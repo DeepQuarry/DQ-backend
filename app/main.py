@@ -14,7 +14,7 @@ app = FastAPI(
 
 
 origins = [
-    "*" # just for now
+    "*"  # just for now
     # "https://deepquarry-pi.vercel.app",
     # "https://deepquarry.vercel.app" "http://localhost",
     # "http://localhost:8080",

@@ -21,7 +21,6 @@ class Settings(BaseSettings):
     POSTGRES_PORT: Optional[str] = None
     POSTGRES_DB: Optional[str]
 
-
     PROJECT_NAME = "DeepQuarry API v1"
     TESTING: int = 1
 

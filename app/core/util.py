@@ -3,6 +3,7 @@ from logging import Logger
 from typing import Optional
 
 import requests
+
 from app.core.log import generate_logger
 
 

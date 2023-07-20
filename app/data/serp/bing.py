@@ -5,13 +5,12 @@ import os
 import posixpath
 import random
 import re
-import shutil
 import socket
 import time
 import urllib.parse
 from io import BytesIO
 from threading import BoundedSemaphore, Lock, Thread
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 import requests
 from requests_ip_rotator import ApiGateway
@@ -24,7 +23,7 @@ from app.models.dataset import Dataset
 from app.models.image import Image
 from app.models.query import Query
 
-logger = generate_logger("Scraper", level=logging.DEBUG)
+logger = generate_logger("Scraper", level=logging.INFO)
 
 
 class Scraper:
@@ -205,6 +204,8 @@ class Scraper:
             self.session = requests.Session()
             self.session.mount(self.DOMAIN, g)
 
+            logger.info(f"STARTING TO SCRAPE query: {query_model.query}")
+
             while True:
                 time.sleep(0.1)
 
@@ -242,9 +243,7 @@ class Scraper:
                             return
 
                         logger.debug(f"STARTING THREAD ON {link}")
-                        thread = Thread(
-                            target=self.download_image, args=(link,)
-                        )
+                        thread = Thread(target=self.download_image, args=(link,))
                         thread.start()
                         images_downloaded += 1
 
