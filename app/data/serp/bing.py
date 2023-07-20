@@ -189,7 +189,8 @@ class Scraper:
         self.reset_scraper()
         self.is_scraping = True
 
-        self.uploader.create_dir(query_model.id)
+        self.uploader.load_query(query_model.id)
+        self.uploader.create_dir()
 
         images_downloaded = 1
         cleaned_query = urllib.parse.quote_plus(query_model.query)
