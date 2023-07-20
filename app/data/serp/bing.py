@@ -243,7 +243,7 @@ class Scraper:
 
                         logger.debug(f"STARTING THREAD ON {link}")
                         thread = Thread(
-                            target=self.download_image, args=(link)
+                            target=self.download_image, args=(link,)
                         )
                         thread.start()
                         images_downloaded += 1

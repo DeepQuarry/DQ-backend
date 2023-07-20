@@ -41,10 +41,10 @@ class Uploader:
             self.s3.Bucket(self.bucket_name).put_object(Key=upload_dir+"/")
 
 
-    def queue_upload(self, fname: str, image: bytes):
-        def upload(fname: str, image: bytes):
-            path = self.__get_fpath(fname)
-            self.s3.Bucket(self.bucket_name).put_object(Key=path, Body=image)
+    def upload(self, fname: str, image: bytes):
+        path = self.__get_fpath(fname)
+        self.s3.Bucket(self.bucket_name).put_object(Key=path, Body=image)
 
-        worker_queue.enqueue(upload, fname, image)
+    def queue_upload(self, fname: str, image: bytes):
+        worker_queue.enqueue(self.upload, fname, image)
 
