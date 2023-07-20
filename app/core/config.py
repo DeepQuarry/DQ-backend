@@ -10,6 +10,10 @@ class Settings(BaseSettings):
 
     AWS_ACCESS_KEY_ID: str
     AWS_SECRET_ACCESS_KEY: str
+    AWS_BUCKET: str = "deepquarrybucket"
+
+    # Heroku designates the primary DB with this config var
+    DATABASE_URL: Optional[str] = None
 
     POSTGRES_USER: Optional[str]
     POSTGRES_PASSWORD: Optional[str] = None
@@ -17,11 +21,12 @@ class Settings(BaseSettings):
     POSTGRES_PORT: Optional[str] = None
     POSTGRES_DB: Optional[str]
 
-    # Heroku designates the primary DB with this config var
-    DATABASE_URL: Optional[str] = None
+    # dont put this here for now
+    # REDIS_URL: str = "redis://localhost:6379"
+
 
     PROJECT_NAME = "DeepQuarry API v1"
-    TESTING: bool = True
+    TESTING: int = 1
 
 
 settings = Settings()

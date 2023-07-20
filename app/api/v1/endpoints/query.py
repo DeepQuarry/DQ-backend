@@ -5,9 +5,10 @@ from sqlalchemy.orm import Session
 from app import schemas
 
 from app.api import deps
+from app.data.serp.bing import Scraper
 from app.db import crud
 from app.models.query import Query
-from app.serp.bing import Scraper
+from app.data.upload import worker_queue
 
 router = APIRouter()
 

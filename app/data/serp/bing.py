@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.log import generate_logger
+from app.data.upload import Uploader
 from app.models.dataset import Dataset
 from app.models.image import Image
 from app.models.query import Query
@@ -71,7 +72,7 @@ class Scraper:
         self.image_models = []
         self.is_scraping = False
         self.dataset_model = None
-        self.is_writing_db = False
+        self.uploader = Uploader()
 
         user_agent = random.choice(USER_AGENTS)
         self.headers["User-Agent"] = user_agent
@@ -104,12 +105,6 @@ class Scraper:
         user_agent = random.choice(self.user_agents)
         self.headers["User-Agent"] = user_agent
 
-    def get_upload_dir(self, query_id: int) -> str:
-        if self.is_testing:
-            return os.path.join("app", ".cache", "datasets", str(query_id))
-        else:
-            raise NotImplementedError("Server side upload not implemented yet")
-
     def write_image(self, image_path: str, image: bytes):
         if self.is_testing:
             with open(image_path, "wb") as f:
@@ -117,7 +112,13 @@ class Scraper:
         else:
             raise NotImplementedError("Server side upload not implemented yet")
 
-    def download_image(self, url: str, upload_dir: str):
+    def write(self, hash: str, fname: str, image: bytes):
+        self.image_hashes[hash] = fname
+        self.file_lock.acquire()
+        self.image_models.append(Image(hash=hash))
+        self.uploader.queue_upload(fname, image)
+
+    def download_image(self, url: str):
         if len(self.downloaded_urls) >= self.image_limit or not self.is_scraping:
             logger.warning(f"Killing thread for {url}")
             return
@@ -157,27 +158,14 @@ class Scraper:
                 return
 
             counter = 0
-            image_path = os.path.join(upload_dir, filename)
-            while os.path.exists(image_path):
-                if hashlib.md5(open(image_path, "rb").read()).hexdigest() == hash:
-                    logger.warning(f"SKIP: Already downloaded {filename}, not saving")
-                    return
-
+            while filename in self.image_hashes.values():
                 counter += 1
                 filename = "%s-%d.%s" % (name, counter, ext)
-                image_path = os.path.join(upload_dir, filename)
 
             if len(self.downloaded_urls) >= self.image_limit:
                 return
 
-            self.image_hashes[hash] = filename
-
-            self.file_lock.acquire()
-
-            if self.is_writing_db:
-                self.image_models.append(Image(hash=hash, path=image_path))
-
-            self.write_image(image_path, image)
+            self.write(hash, filename, image)
 
             logger.debug(f"DOWNLOADED: {filename}")
             self.downloaded_urls.add(url)
@@ -192,21 +180,16 @@ class Scraper:
                 self.file_lock.release()
 
     def scrape_images(
-        self, query_model: Query, db: Optional[Session] = None
+        self, query_model: Query, db: Session
     ):  # Session is not to be confused with requests.Session
         if self.is_scraping:
             logger.error("Cannot scrape - already in progress")
             return
 
         self.reset_scraper()
-        self.is_writing_db = db != None
         self.is_scraping = True
 
-        upload_dir = self.get_upload_dir(query_model.id)
-        if self.is_testing and os.path.exists(upload_dir):
-            shutil.rmtree(upload_dir)
-
-        os.mkdir(upload_dir)
+        self.uploader.create_dir(query_model.id)
 
         images_downloaded = 1
         cleaned_query = urllib.parse.quote_plus(query_model.query)
@@ -244,15 +227,14 @@ class Scraper:
                             if links[-1] == last:
                                 logger.info("REACHED END OF BING IMAGES")
 
-                            if self.is_writing_db:
-                                dataset = Dataset(
-                                    query_id=query_model.id, title=query_model.query
-                                )
-                                dataset.images = self.image_models
-                                db.add_all([dataset, *self.image_models])
+                            dataset = Dataset(
+                                query_id=query_model.id, title=query_model.query
+                            )
+                            dataset.images = self.image_models
+                            db.add_all([dataset, *self.image_models])
 
-                                setattr(query_model, "subtask_completed", True)
-                                db.commit()
+                            setattr(query_model, "subtask_completed", True)
+                            db.commit()
 
                             self.is_scraping = False
                             logger.info("Finished scraping")
@@ -260,7 +242,7 @@ class Scraper:
 
                         logger.debug(f"STARTING THREAD ON {link}")
                         thread = Thread(
-                            target=self.download_image, args=(link, upload_dir)
+                            target=self.download_image, args=(link)
                         )
                         thread.start()
                         images_downloaded += 1

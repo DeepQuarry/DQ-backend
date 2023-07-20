@@ -5,7 +5,6 @@ from app.core.config import settings
 
 
 def create_postgres_url():
-    print(settings.DATABASE_URL)
     if settings.DATABASE_URL:
         return settings.DATABASE_URL.replace("postgres", "postgresql")
     else:
