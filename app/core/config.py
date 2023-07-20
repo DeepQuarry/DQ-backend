@@ -21,9 +21,6 @@ class Settings(BaseSettings):
     POSTGRES_PORT: Optional[str] = None
     POSTGRES_DB: Optional[str]
 
-    # dont put this here for now
-    # REDIS_URL: str = "redis://localhost:6379"
-
 
     PROJECT_NAME = "DeepQuarry API v1"
     TESTING: int = 1

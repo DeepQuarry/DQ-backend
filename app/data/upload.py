@@ -1,14 +1,11 @@
 import os
 import shutil
 import boto3
-from rq import Queue
 from app.core.log import generate_logger
-from app.worker import conn
 from app.core.config import settings
 
 
 logger = generate_logger()
-worker_queue = Queue(connection=conn)
 
 class Uploader:
     def __init__(self) -> None:
@@ -44,7 +41,4 @@ class Uploader:
     def upload(self, fname: str, image: bytes):
         path = self.__get_fpath(fname)
         self.s3.Bucket(self.bucket_name).put_object(Key=path, Body=image)
-
-    def queue_upload(self, fname: str, image: bytes):
-        worker_queue.enqueue(self.upload, fname, image)
 

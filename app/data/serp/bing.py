@@ -24,7 +24,7 @@ from app.models.dataset import Dataset
 from app.models.image import Image
 from app.models.query import Query
 
-logger = generate_logger("Scraper", level=logging.INFO)
+logger = generate_logger("Scraper", level=logging.DEBUG)
 
 
 class Scraper:
@@ -116,10 +116,10 @@ class Scraper:
         self.image_hashes[hash] = fname
         self.file_lock.acquire()
         self.image_models.append(Image(hash=hash))
-        self.uploader.queue_upload(fname, image)
+        self.uploader.upload(fname, image)
 
     def download_image(self, url: str):
-        if len(self.downloaded_urls) >= self.image_limit or not self.is_scraping:
+        if len(self.downloaded_urls) > self.image_limit or not self.is_scraping:
             logger.warning(f"Killing thread for {url}")
             return
 
@@ -162,7 +162,7 @@ class Scraper:
                 counter += 1
                 filename = "%s-%d.%s" % (name, counter, ext)
 
-            if len(self.downloaded_urls) >= self.image_limit:
+            if len(self.downloaded_urls) > self.image_limit:
                 return
 
             self.write(hash, filename, image)
@@ -222,7 +222,7 @@ class Scraper:
                 try:
                     for link in links:
                         if (
-                            len(self.downloaded_urls) >= self.image_limit
+                            len(self.downloaded_urls) > self.image_limit
                             or links[-1] == last
                         ):
                             if links[-1] == last:
