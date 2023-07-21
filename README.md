@@ -42,7 +42,7 @@ uvicorn app.main:app --reload --port 8000
 ```
 
 ## Public API Usage
-The API is currently hosted at `https://deepquarry-28dd5496b5af.herokuapp.com/v1/api`.
+The API is currently hosted at `https://deepquarry-28dd5496b5af.herokuapp.com/api/v1`.
 
 [Documentation](https://deepquarry-28dd5496b5af.herokuapp.com/docs)
 
