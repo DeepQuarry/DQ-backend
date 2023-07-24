@@ -32,15 +32,15 @@ middleware = [
     Middleware(
         CORSMiddleware,
         allow_origins=["*"],
-        # allow_origin_regex=regex_origin,
-        allow_credentials=True,
-        allow_methods=["GET", "POST"],
-        allow_headers=["*"],
+        # # allow_origin_regex=regex_origin,
+        # allow_credentials=True,
+        # allow_methods=["GET", "POST"],
+        # allow_headers=["*"],
     )
 ]
 
 app = FastAPI(
-    title=settings.PROJECT_NAME, openapi_url=f"{settings.API_V1_STR}/openapi.json"
+    title=settings.PROJECT_NAME, openapi_url=f"{settings.API_V1_STR}/openapi.json", middleware=middleware
 )
 
 
